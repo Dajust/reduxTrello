@@ -1,0 +1,365 @@
+// @import url(https://fonts.googleapis.com/css?family=Lobster);
+@import "./vendors/normalise";
+
+.full-cover{
+	height : 100%;
+	padding : 0;
+	margin : 0;
+	display : flex;
+	flex-direction : column;
+}
+.action{
+	cursor : pointer;
+  &:hover{
+  	background-color : #eee;
+  	border-radius : 2px;
+  }
+}
+.action-text{
+	line-height: 1.99;
+	cursor: pointer;
+	color:#828282;
+	padding : 0 5px;
+	&:hover{
+		text-decoration: underline;
+		color: inherit;
+		background-color: rgba(0, 0, 0, 0.129);
+	}
+}
+html,body,#app,.root-comp{
+	@extend .full-cover;
+	color: #5a5a5a;
+	overflow: hidden;
+	background-color : #009688;
+}
+header{
+  flex : none;
+	background-color : #00796b;
+	text-align : center;
+	padding : 5px 0;
+}
+.app-name{
+	font-size : 30px;
+	color : #fff;
+	margin : 0;
+	line-height : 1;
+}
+.app-board-container{
+	flex-grow : 1;
+	position: relative;
+}
+.app-board{
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	padding : 10px;
+	white-space : nowrap;
+	overflow-y: hidden;
+	overflow-x: auto;
+	padding-bottom : 10px;
+	margin-bottom : 10px;
+}
+.add-a-list-btn-container{
+	flex-grow : 1;
+	background-color : #C7C7C7;
+	padding: 4px;
+	font-size: 14px;
+	border-radius : 2px;
+	cursor : pointer;
+	&:hover{
+		background-color:#A9A9A9;
+	}
+	&.show-addlist-editor{
+		background-color : transparent;
+		cursor: default;
+	}
+}
+.add-a-list-btn{
+	padding : 4px;
+}
+.list-container{
+	width : 270px;
+	height : 100%;
+	display : inline-block;
+	margin-right : 10px;
+	overflow : hidden;
+	&:last-child{
+		margin-right : 0;
+	}
+}
+.list{
+	display : flex;
+	flex-direction : column;
+	background-color : #E2E2E2;
+	border-radius : 2px;
+	box-shadow :  0 1px 4px 0 rgba(0,0,0,0.15);
+	white-space : normal;
+	max-height : 100%;
+	position : relative;
+}
+.list-title{
+	flex : none;
+	margin : 0;
+	font : {
+		size : 16px;
+		weight : bold;
+	};
+  padding: 8px;
+  line-height: 1;
+}
+.add-card-btn{
+	text-decoration: none;
+  color: #8c8c8c;
+  font-size: 14px;
+  padding: 10px 0px 8px 8px;
+  border-radius: 0 0px 2px 2px;
+  &:hover{
+  	background-color: rgba(0, 0, 0, 0.129);
+  	text-decoration: underline;
+  	color: inherit;
+  }
+}
+.cards-container{
+	flex-grow : 1;
+	padding : 0 4px;
+	margin : 0 4px;
+	overflow-y : auto;
+	overflow-x: hidden;
+	.editor{
+		margin-bottom : 8px;
+	}
+	&::-webkit-scrollbar{
+	  width: 7px;
+	}
+	&::-webkit-scrollbar-track {
+  	  background-color: #d6d5d5;
+    border-radius:10px;
+	}
+	&::-webkit-scrollbar-thumb {
+  	background-color: rgba(0, 0, 0, 0.1);
+  	border-radius:10px;
+	}
+}
+.card{
+	padding : 7px;
+	margin-bottom : 8px;
+	border-radius : 2px;
+	background-color : #fff;
+	color : #828282;
+	position: relative;
+	box-shadow :  0 1px 1px 0 rgba(0,0,0,0.15);
+	.card-description,
+	.card-title,
+	.task{
+		padding-left : 5px;
+		padding-right : 5px;
+	}
+}
+
+.card-title-container{
+	max-width: 218px;
+	padding-bottom : 5px;
+	i.fa{
+		font-size: 18px;
+	}
+}
+.card-title{
+	font-size : 16px;
+	padding-top: 2px;
+	padding-bottom: 2px;
+	.title{
+		padding-left : 5px;
+	}
+}
+.delete-list-icon,
+.menu-icon{
+	color: #B7B7B7;
+	padding: 1px;
+  text-align: center;
+  font-size: 14px;
+	position: absolute;
+	right : 5px;
+	top : 5px;
+	i{
+		float: left;
+		width : 18px;
+		height: 18px;
+		line-height: 19px;
+	}
+}
+.delete-list-icon:hover{
+	background-clolor : #fff;
+	color : #f93131;
+}
+.card-menu{
+	width: 145px;
+	margin : 0 5px;
+  position: fixed;
+  background-color: #fff;
+  border-radius: 2px;
+  z-index: 2;
+  font-size: 15px;
+  box-shadow: rgba(0, 0, 0, 0.156863) 0px 3px 10px, rgba(0, 0, 0, 0.227451) 0px 3px 10px;
+  hr{
+  	margin: 7px 0;
+	  border: 0;
+	  border-top: 1px solid #ccc;
+  }
+  .header{
+  	text-align: center;
+  	font-size: 13.5px;
+  	  padding-top: 7px
+  }
+	.action{
+		@extend .action-text;
+		padding: 0 10px;
+		&:hover{
+			background-color : #eee;
+		}
+	}
+}
+.card-details{
+	font-size: 14.5px;
+	>*{
+		margin-top : 10px;
+	}
+	>*:first-child{
+		margin-top : 15px;
+	}
+}
+.description .editor{
+	margin-left : 5px;
+}
+.card-description{
+	padding : 5px 0;
+}
+.add-description-prompt{
+	font-size: 13px;
+  color: #C5C5C5;
+  border: 1px dashed #D6D5D5;
+  padding: 4px;
+  border-radius: 3px;
+	margin-left : 5px;
+}
+.add-task-wrapper{
+	@extend .action-text;
+	padding : 0;
+	color : #bbb;
+	padding-left : 20px;
+	&:hover{
+		background-color: #eee;
+	}
+	&.active{
+		color:#5a5a5a;
+		&:hover{
+			background-color: transparent;
+			text-decoration: none;
+			// color : #bbb;
+			cursor: default;
+		}
+	}
+}
+.check-list{
+	margin : 0;
+	padding: 0;
+	line-height : 1.5;
+  list-style: none;
+  .task{
+  	display: flex;
+  	padding-top : 5px;
+		padding-bottom: 2px;
+		line-height: 1.5;
+		i.fa{
+			font-size: 19px;
+    	line-height: 0.9;
+			margin-right : 3px;
+		}
+  }
+
+  .editor-wrapper{
+  	flex-grow: 1;
+  	display: inline-block;
+  	margin-top: -5px;
+  	margin-bottom: 5px;
+  }
+
+  .task-name{
+  	display : inline-block;
+  	padding : 0 4px;
+  	margin-left: 3px;
+  	margin-top: -3px;
+  	width: 100%;
+		&.done{
+			text-decoration : line-through;
+			font-style : italic;
+			color : #d6d5d5
+		}
+  }
+}
+.editor{
+	display : flex;
+	form{
+		flex-grow: 1;
+	}
+	.input-container{
+		display: flex;
+	}
+	textarea{
+		flex-grow: 1;
+	  border-radius: 2px;
+	  resize: none;
+	  overflow: hidden;
+		&.add-list{
+			border: 1px solid #d6d5d5;
+			-webkit-appearance: none;
+			background-color: #F7F7F7;
+			box-shadow: inset 0 1px 8px rgba(0, 0, 0, 0.1);
+			height: 22px;
+			line-height: 1.5;
+			padding : 4px;
+		}
+		&.add-card{
+			@extend .card;
+			border : none;
+  		height: 45px;
+  		margin-bottom: 0;
+		}
+		&.edit-checklist{
+			@extend .add-list;
+			background-color: #FCFCFC;
+			box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.1);
+			height: 20px;
+			padding: 3px 4px;
+		}
+		&:focus{
+			outline: none;
+		}
+	}
+	.controls{
+		margin-top : 10px;
+	  font-size: 13px;
+	  display: flex;
+	  justify-content: space-between;
+	  .cancel,.delete{
+	  	@extend .action-text;
+	  }
+
+	  button{
+	  	border: none;
+	  	background-color: rgba(2, 167, 39, 0.98);
+		  box-shadow: 0 1px 0 #3f6f21;
+		  color: #fff;
+		  border-radius: 2px;
+		  width: 55px;
+		  height: 25px;
+		  &:hover{
+		  	background-color: rgba(0, 128, 29, 0.98);
+		  }
+			&:focus{
+				outline : none;
+			}
+	  }
+	}
+}
