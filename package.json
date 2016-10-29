@@ -32,7 +32,7 @@
     "react-dom": "^15.3.0"
   },
   "scripts": {
-    "webpack": "webpack -w --progress",
+    "production": "webpack -p",
     "dev": "webpack-dashboard -- webpack-dev-server --progress --inline --content-base bundle/"
   }
 }

@@ -12,14 +12,15 @@ module.exports = {
 	entry : "./app/index.js",
 
 	output : {
-		path 		: __dirname + "/bundle",
+		path 		: __dirname + "/",
 		filename : "bundle.js"
 	},
 
 	plugins : [
 		new DashboardPlugin(),
 		HTMLWebpackPluginConfig,
-		new ExtractTextPlugin("styles.css",{allChunks : true})
+		new ExtractTextPlugin("styles.css",{allChunks : true}),
+
 	],
 
 	module : {
