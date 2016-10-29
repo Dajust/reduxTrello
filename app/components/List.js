@@ -1,47 +1,44 @@
-import React,{PropTypes} from "react";
+import React,{PropTypes, Component} from "react";
 import CardContainer from "../containers/CardContainer";
 import Editor from "./Editor";
 import {DropTarget} from "react-dnd";
 import Types from "../staticTypes";
 
 const DropTargetSpec = {
-	drop (props, monitor) {
-		console.log("drop got fired!");
-		const droppedItem = monitor.getItem();
-		console.log("Yikes!! you dropped", droppedItem, " on me - ", props.title);
-		return {
-			...droppedItem,
-			placeDropped : props.title
-		};
-	},
-	//
-	//
-	hover (props) {
-		console.log("Hey you over me:", props.title);
-	},
-	// canDrop (props, monitor) {
-	// 	const item = monitor.getItem();
-	// 	console.log("Hey! yea..\n, You can drop ",item," on me!!! I am", props.title);
-	// },
-}
+	drop () {
 
-const DropTargetCollect = function DropTargetCollect(connect, monitor) {
-	return {
+	},
+	//
+	hover (props, monitor, component) {
+		const item = monitor.getItem(),
+			mouseYPosition = monitor.getClientOffset().y;
+
+		if (item.parentIndex === props.index) { return; }
+
+		const index = mouseYPosition < component.rectPosition.top + 32 ? 0 : props.numOfCards; // 32 is the minium height of list-title-div
+		props.moveCard(item.index, item.parentIndex, props.index, index);
+
+		monitor.getItem().index = index;
+		monitor.getItem().parentIndex = props.index;
+	},
+};
+
+const DropTargetCollect = (connect, monitor) => ({
 		isOver : monitor.isOver(),
 		canDrop : monitor.canDrop(),
 		connectDropTarget : connect.dropTarget()
-	}
-}
+	});
 
 const ListPropTypes = {
 	cards : PropTypes.array.isRequired,
 	shouldCloseAllEditor : PropTypes.bool.isRequired,
 	shouldShowCardMenu : PropTypes.bool.isRequired,
 	id : PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
+	index : PropTypes.number.isRequired,
 	title         : PropTypes.string.isRequired,
-	curActiveCard : PropTypes.string.isRequired,
+	curActiveCard : PropTypes.oneOfType([PropTypes.string, PropTypes.number ]).isRequired,
 	curActiveList : PropTypes.string.isRequired,
-	curTaskEditing : PropTypes.string,
+	curTaskEditing : PropTypes.oneOfType([PropTypes.string, PropTypes.number ]).isRequired,
 	attributeToEdit : PropTypes.string.isRequired,
 	currentEditorValue : PropTypes.string.isRequired,
 	showEditor : PropTypes.func.isRequired,
@@ -53,49 +50,57 @@ const ListPropTypes = {
 	openCardMenu   : PropTypes.func.isRequired,
 	onSaveEdit : PropTypes.func.isRequired,
 	onAddACard : PropTypes.func.isRequired,
-	onDeleteList : PropTypes.func.isRequired
-}
+	numOfCards : PropTypes.number,
+	onDeleteList : PropTypes.func.isRequired,
+	moveCard : PropTypes.func.isRequired,
+	connectDropTarget : PropTypes.func.isRequired,
+	swapCardIndex : PropTypes.func.isRequired
+};
 
-const List = props =>{
-	const showAddCardEditor = !props.shouldCloseAllEditor && props.curActiveList === `list__${props.id}` && props.attributeToEdit === "createNewCard";
-	return props.connectDropTarget(
-		<div className="list-container">
-			<div className="list">
-			<div className="action delete-list-icon" >
-				<i className="fa fa-trash"
-						aria-hidden="true"
-						onClick={() => {
-								props.onDeleteList(props.id);
+class List extends Component {
+	render () {
+		const showAddCardEditor = !this.props.shouldCloseAllEditor && this.props.curActiveList === `list__${this.props.id}` && this.props.attributeToEdit === "createNewCard";
+		return this.props.connectDropTarget(
+			<div className="list-container" ref={list => this.rectPosition = list ? list.getBoundingClientRect() : null}>
+				<div className="list">
+					<div className="action delete-list-icon" >
+						<i className="fa fa-trash"
+							aria-hidden="true"
+							onClick={() => {
+								this.props.onDeleteList(this.props.id);
 							}
 						}>
-				</i>
-			</div>
-				<h2 className="list-title">{props.title}</h2>
+					</i>
+				</div>
+				<h2 className="list-title">{this.props.title}</h2>
 				<div className="cards-container">
 					{
-						props.cards.map(card =>
+						this.props.cards.map((card, i) =>
 							<CardContainer
 								id={card.id}
 								key={card.id}
 								title={card.title}
+								index={i}
 								description={card.description}
 								tasks={card.tasks}
-								listId={props.id}
-								onDeleteCard={props.onDeleteCard}
-								curTaskEditing={props.curTaskEditing}
-								closeAllEditor={props.closeAllEditor}
-								showEditor={props.showEditor}
-								shouldShowMenu={props.shouldShowCardMenu}
-								curActiveCard={props.curActiveCard}
-								attributeToEdit     = {props.attributeToEdit}
-								currentEditorValue  = {props.currentEditorValue}
-								onDeleteTask = {props.onDeleteTask}
-								onChangeEditorValue={props.onChangeEditorValue}
-								shouldCloseAllEditor={props.shouldCloseAllEditor}
-								openCardMenu={props.openCardMenu}
-								onSaveEdit = {props.onSaveEdit}
-								onToggleDoneTask = {props.onToggleDoneTask}
-							/>
+								listId={this.props.id}
+								listIndex={this.props.index}
+								onDeleteCard={this.props.onDeleteCard}
+								curTaskEditing={this.props.curTaskEditing}
+								closeAllEditor={this.props.closeAllEditor}
+								showEditor={this.props.showEditor}
+								shouldShowMenu={this.props.shouldShowCardMenu}
+								curActiveCard={this.props.curActiveCard}
+								attributeToEdit= {this.props.attributeToEdit}
+								currentEditorValue  = {this.props.currentEditorValue}
+								onDeleteTask = {this.props.onDeleteTask}
+								onChangeEditorValue={this.props.onChangeEditorValue}
+								shouldCloseAllEditor={this.props.shouldCloseAllEditor}
+								openCardMenu={this.props.openCardMenu}
+								onSaveEdit = {this.props.onSaveEdit}
+								onToggleDoneTask = {this.props.onToggleDoneTask}
+								swapCardIndex = {this.props.swapCardIndex}
+								/>
 						)
 					}
 					{
@@ -104,21 +109,21 @@ const List = props =>{
 							textareaClass={"add-card"}
 							showDelete={false}
 							placeholder="Add a card..."
-							value={props.currentEditorValue}
-							onChange={props.onChangeEditorValue}
-							onSaveEdit={(e) => {props.onSaveEdit(e,props.id)}}
-						/> :
-						undefined
+							value={this.props.currentEditorValue}
+							onChange={this.props.onChangeEditorValue}
+							onSaveEdit={(e) => {this.props.onSaveEdit(e,this.props.id);}}
+							/> :
+							undefined
+						}
+					</div>
+					{
+						showAddCardEditor === true ? undefined :
+						<a href="#" onClick={(e)=>this.props.onAddACard(e, `list__${this.props.id}`)} className="add-card-btn">Add a card...</a>
 					}
 				</div>
-				{
-					showAddCardEditor === true ? undefined :
-					<a href="#" onClick={(e)=>props.onAddACard(e, `list__${props.id}`)} className="add-card-btn">Add a card...</a>
-				}
-
 			</div>
-		</div>
-	)
+		);
+	}
 }
 
 List.propTypes = ListPropTypes;

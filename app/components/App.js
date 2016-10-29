@@ -5,47 +5,57 @@ import allLists from "../appModule/appModule";
 
 export default class App extends Component {
 	constructor () {
-		super()
+		super();
 		this.state = {
-			allLists : [],
-		}
+			allLists : []
+		};
 	}
 
-  componentDidMount () {	
+  componentDidMount () {
 		// Skip Get Data for now
 
 		// Make data immutable
 		const immutableAllLists = Immutable.fromJS(allLists);
 		this.setState({allLists : immutableAllLists});
   }
-  //======== UTILS==========
+  //======== UTILS  ==========
 	findListIndex (listId) {
-		return this.state.allLists.findIndex(list =>	list.get("id") === listId)
+		return this.state.allLists.findIndex(list =>	list.get("id") === listId);
 	}
 
-	findCardIndex (listIndex, cardId) {
-		return this.state.allLists.get(listIndex).get("cards")
+	findCardIndex (listId, cardId) {
+		return this.state.allLists.getIn([this.findListIndex(listId), "cards"])
 						.findIndex(card => card.get("id") === cardId);
 	}
 
 	findTaskIndex (listIndex, cardIndex, taskId) {
-		return this.state.allLists.get(listIndex).get("cards").get(cardIndex).get("tasks")
+		return this.state.allLists.getIn( [listIndex, "cards", cardIndex, "tasks"] )
 						.findIndex(task =>  task.get("id") === taskId);
 	}
 
-	getPathToAttribute (attribute, listId, cardId, taskId) {
+	getCardsPath (listId) {
+		return [this.findListIndex(listId), "cards"];
+	}
+
+	getCardPath (listId, cardId) {
+		return this.getCardsPath(listId).concat( [this.findCardIndex(listId, cardId)]);
+	}
+
+	getCardsInList (listId) {
+		return this.state.allLists.getIn( this.getCardsPath(listId) );
+	}
+
+	getCardAtrributePath(attribute, listId, cardId, taskId) {
 		const
 			listIndex  = this.findListIndex(listId),
-			cardIndex  = this.findCardIndex(listIndex, cardId),
+			cardIndex  = this.findCardIndex(listId, cardId),
 			attributePath = [listIndex, "cards", cardIndex];
 
 		return  attribute === "task" ?
-						attributePath.concat("tasks",this.findTaskIndex(listIndex, cardIndex, taskId)):
-						attribute === "taskList" ?
-						attributePath.concat("tasks") :
-						attribute === "card"?
-						attributePath :
-						attributePath.concat(attribute);
+							attributePath.concat("tasks",this.findTaskIndex(listIndex, cardIndex, taskId)):
+						attribute === "taskList" ? attributePath.concat("tasks") :
+						attribute === "card"? attributePath :
+						attributePath.concat(attribute); // returns non-nested card attributes eg title or description...
 	}
 
 	updateState (type, updatePath, newData) {
@@ -59,28 +69,28 @@ export default class App extends Component {
 
 	//===========TASK ACTIONS=============
 	handleToggleDoneTask (listId, cardId, taskId) {
-		const taskPath     = this.getPathToAttribute("task", listId, cardId, taskId),
+		const taskPath     = this.getCardAtrributePath("task", listId, cardId, taskId),
 					taskDonePath = taskPath.concat("done"),
 					isTaskDone   = !this.state.allLists.getIn(taskDonePath);
 		this.updateState("update", taskDonePath, isTaskDone);
 	}
 
 	handleSaveTaskEdit (val, listId, cardId, taskId){
-		const taskNamePath = this.getPathToAttribute ("task", listId, cardId, taskId).concat("name");
+		const taskNamePath = this.getCardAtrributePath ("task", listId, cardId, taskId).concat("name");
 		this.updateState("update", taskNamePath, val.trim());
 	}
 
 	handleDeleteTask (listId, cardId, taskId){
-		const taskPath = this.getPathToAttribute ("task", listId, cardId, taskId);
+		const taskPath = this.getCardAtrributePath ("task", listId, cardId, taskId);
 		this.updateState("delete", taskPath);
 	}
 
-	handleSaveNewTask (tastName, listId, cardId) {
-		const tasksPath = this.getPathToAttribute("taskList", listId, cardId),
+	handleSaveNewTask (taskName, listId, cardId) {
+		const tasksPath = this.getCardAtrributePath("taskList", listId, cardId),
 					tasks     = this.state.allLists.getIn(tasksPath),
 					newTasks  = tasks.push(Immutable.Map({
 						id   : new Date().getTime(),
-						name :  tastName.trim(),
+						name :  taskName.trim(),
 						done : false
 					}));
 
@@ -89,21 +99,20 @@ export default class App extends Component {
 
 //============ CARD ACTIONS =================
 	handleSaveCardEdit (attribute, val, listId, cardId){
-		const attributePath = this.getPathToAttribute (attribute, listId, cardId);
-		this.updateState("update", attributePath, val.trim())
+		const attributePath = this.getCardAtrributePath (attribute, listId, cardId);
+		this.updateState("update", attributePath, val.trim());
 	}
 
 	handleDeleteCard (listId, cardId){
-		const cardPath = this.getPathToAttribute ("card", listId, cardId);
+		const cardPath = this.getCardAtrributePath ("card", listId, cardId);
 		this.updateState("delete", cardPath);
-		console.log("handleDeleteCard fired!!", listId, cardId);
 	}
 
 	handleSaveNewCard (cardTitle, listId) {
 		const listIndex = this.findListIndex(listId),
 					listName = this.state.allLists.getIn([listIndex,"name"]),
-					cardsPath = [listIndex, "cards"],
-					cardsInList = this.state.allLists.getIn(cardsPath),
+					cardsPath = this.getCardsPath(listId),
+					cardsInList = this.getCardsInList(listId),
 					newCardsInList  = cardsInList.push(Immutable.Map({
 						id    : new Date().getTime(),
 						title :  cardTitle.trim(),
@@ -112,6 +121,31 @@ export default class App extends Component {
 						tasks:Immutable.List()
 					}));
 		this.updateState("create", cardsPath, newCardsInList);
+	}
+
+	moveCard (cardIndex, cardParentIndex, newCardParentIndex, newCardIndex) {
+		const cardPath = [cardParentIndex, "cards", cardIndex],
+					allLists = this.state.allLists,
+					card     = allLists.getIn(cardPath),
+					newCardParent = allLists.getIn([newCardParentIndex, "cards"])
+													.insert(newCardIndex, card),
+					newAllLists   = allLists.deleteIn(cardPath)
+													.setIn([newCardParentIndex, "cards"], newCardParent );
+
+		this.setState({
+			allLists : newAllLists
+		});
+	}
+
+	swapCardIndex (cardParentIndex, dragIndex, hoverIndex) {
+		const cardsPath = [cardParentIndex, "cards"],
+					cards = this.state.allLists.getIn(cardsPath),
+					dragItem = cards.get(dragIndex),
+					newCards = cards.delete(dragIndex).insert(hoverIndex, dragItem);
+
+		this.setState({
+			allLists : this.state.allLists.setIn(cardsPath, newCards)
+		});
 	}
 
 	//=============== List Actions =================
@@ -134,7 +168,8 @@ export default class App extends Component {
 					allLists = al.size ? al.toJS() : al;
 		return (
       <MainContainer
-				allLists={allLists}
+				allLists       = {allLists}
+				moveCard       = {this.moveCard.bind(this)}
 				onDeleteTask   = {this.handleDeleteTask.bind(this)}
 				onSaveCardEdit = {this.handleSaveCardEdit.bind(this)}
 				onDeleteCard   = {this.handleDeleteCard.bind(this)}
@@ -144,7 +179,8 @@ export default class App extends Component {
 				onSaveNewList  = {this.handleSaveNewList.bind(this)}
 				onDeleteList   = {this.handleDeleteList.bind(this)}
 				onToggleDoneTask = {this.handleToggleDoneTask.bind(this)}
+				swapCardIndex = {this.swapCardIndex.bind(this)}
 			/>
-		)
+		);
 	}
 }

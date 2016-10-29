@@ -8,11 +8,11 @@ const cardMenuPropTypes = {
 	onEditTitle 			: PropTypes.func.isRequired,
 	onEditDescription : PropTypes.func,
 	onDeleteCard      : PropTypes.func.isRequired,
-	menuPosition     : PropTypes.object.isRequired
-}
+	menuPosition      : PropTypes.object.isRequired
+};
 
 const CardMenu = (props) =>(
-	<div className="card-menu" style={props.menuPosition    }>
+	<div className="card-menu" style={props.menuPosition}>
 		<div className="header">Card Actions</div>
 		<hr/>
 		<div className="action" onClick={props.onAddATask}>Add a task...</div>
@@ -20,7 +20,7 @@ const CardMenu = (props) =>(
 		<div className="action" onClick={props.onEditDescription}>
 			{props.hasDescription === true ? "Edit description..." : "Add description..."}
 		</div>
-		<div className="action" onClick={()=>{props.onDeleteCard(props.listId, props.cardId)}}>Delete card...</div>
+		<div className="action" onClick={()=>{props.onDeleteCard(props.listId, props.cardId);}}>Delete card...</div>
 	</div>
 );
 

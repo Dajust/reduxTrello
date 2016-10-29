@@ -9,8 +9,8 @@ const BoardPropTypes = {
 	allLists       		   : PropTypes.arrayOf(PropTypes.object).isRequired,
 	shouldCloseAllEditor : PropTypes.bool.isRequired,
 	shouldShowCardMenu : PropTypes.bool.isRequired,
-	curActiveCard : PropTypes.string.isRequired,
-	curTaskEditing : PropTypes.string,
+	curActiveCard : PropTypes.oneOfType([PropTypes.string, PropTypes.number ]).isRequired,
+	curTaskEditing : PropTypes.oneOfType([PropTypes.string, PropTypes.number ]).isRequired,
 	curActiveList : PropTypes.string.isRequired,
 	attributeToEdit : PropTypes.string.isRequired,
 	currentEditorValue : PropTypes.string.isRequired,
@@ -24,8 +24,10 @@ const BoardPropTypes = {
 	onDeleteTask : PropTypes.func.isRequired,
 	onChangeEditorValue : PropTypes.func.isRequired,
 	onSaveEdit : PropTypes.func.isRequired,
-	onDeleteList : PropTypes.func.isRequired
-}
+	onDeleteList : PropTypes.func.isRequired,
+	moveCard: PropTypes.func.isRequired,
+	swapCardIndex : PropTypes.func.isRequired
+};
 
 class Board extends Component {
 	render () {
@@ -34,13 +36,14 @@ class Board extends Component {
 			<div className="app-board-container">
 				<div className="app-board">
 					{
-						this.props.allLists.map(list =>
+						this.props.allLists.map((list, i) =>
 							<List
 								title={list.name}
 								cards={list.cards}
+								numOfCards={list.cards.length}
 								id = {list.id}
 								key={list.id}
-								// setCurActiveCard={this.props.setCurActiveCard}
+								index={i}
 								closeAllEditor={this.props.closeAllEditor}
 								openCardMenu={this.props.openCardMenu}
 								curActiveCard={this.props.curActiveCard}
@@ -58,6 +61,8 @@ class Board extends Component {
 								onToggleDoneTask = {this.props.onToggleDoneTask}
 								onDeleteCard={this.props.onDeleteCard}
 								onDeleteList= {this.props.onDeleteList}
+								moveCard = {this.props.moveCard}
+								swapCardIndex = {this.props.swapCardIndex}
 								/>
 						)
 					}
@@ -85,7 +90,7 @@ class Board extends Component {
 						</div>
 					</div>
 				</div>
-		)
+		);
 	}
 }
 

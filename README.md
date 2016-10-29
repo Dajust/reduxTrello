@@ -1,2 +1,2 @@
 # reacTrello
-Learning ReactJS: My play implementation of basic Trello feature with
+Learning ReactJS, this is my first play project. A simple ***customized*** implementation of some basic [Trello](https://www.trello.com) features.

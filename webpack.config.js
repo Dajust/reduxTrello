@@ -41,7 +41,7 @@ module.exports = {
 			}
 		]
 	}
-}
+};
 
 /*parrameter for loading css-module
 ?modules&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]*/

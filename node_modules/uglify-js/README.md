@@ -62,12 +62,15 @@ The available options are:
   --source-map-include-sources  Pass this flag if you want to include the
                                 content of source files in the source map as
                                 sourcesContent property.
+  --source-map-inline           Write base64-encoded source map to the end of js output.
   --in-source-map               Input source map, useful if you're compressing
                                 JS that was generated from some other original
                                 code.
-  --screw-ie8                   Pass this flag if you don't care about full
-                                compliance with Internet Explorer 6-8 quirks
-                                (by default UglifyJS will try to be IE-proof).
+  --screw-ie8                   Use this flag if you don't wish to support
+                                Internet Explorer 6-8 quirks.
+                                By default UglifyJS will not try to be IE-proof.
+  --support-ie8                 Use this flag to support Internet Explorer 6-8 quirks.
+                                Note: may break standards compliant `catch` identifiers.
   --expr                        Parse a single expression, rather than a
                                 program (for parsing JSON)
   -p, --prefix                  Skip prefix for original filenames that appear
@@ -95,8 +98,8 @@ The available options are:
                                 "@preserve". You can optionally pass one of the
                                 following arguments to this flag:
                                 - "all" to keep all comments
-                                - a valid JS regexp (needs to start with a
-                                slash) to keep only comments that match.
+                                - a valid JS RegExp like `/foo/` or `/^!/` to
+                                keep only matching comments.
                                 Note that currently not *all* comments can be
                                 kept when compression is on, because of dead
                                 code removal or cascading statements into
@@ -133,11 +136,11 @@ The available options are:
   --reserved-file               File containing reserved names
   --reserve-domprops            Make (most?) DOM properties reserved for
                                 --mangle-props
-  --mangle-props                Mangle property names (default `0`). Set to 
+  --mangle-props                Mangle property names (default `0`). Set to
                                 `true` or `1` to mangle all property names. Set
-                                to `unquoted` or `2` to only mangle unquoted 
+                                to `unquoted` or `2` to only mangle unquoted
                                 property names. Mode `2` also enables the
-                                `keep_quoted_props` beautifier option to 
+                                `keep_quoted_props` beautifier option to
                                 preserve the quotes around property names and
                                 disables the `properties` compressor option to
                                 prevent rewriting quoted properties with dot
@@ -289,7 +292,14 @@ you can pass a comma-separated list of options.  Options are in the form
 `foo=bar`, or just `foo` (the latter implies a boolean option that you want
 to set `true`; it's effectively a shortcut for `foo=true`).
 
-- `sequences` -- join consecutive simple statements using the comma operator
+- `sequences` (default: true) -- join consecutive simple statements using the
+  comma operator.  May be set to a positive integer to specify the maximum number
+  of consecutive comma sequences that will be generated. If this option is set to
+  `true` then the default `sequences` limit is `200`. Set option to `false` or `0`
+  to disable. The smallest `sequences` length is `2`. A `sequences` value of `1`
+  is grandfathered to be equivalent to `true` and as such means `200`. On rare
+  occasions the default sequences limit leads to very slow compress times in which
+  case a value of `20` or less is recommended.
 
 - `properties` -- rewrite property access using the dot notation, for
   example `foo["bar"] → foo.bar`
@@ -339,6 +349,9 @@ to set `true`; it's effectively a shortcut for `foo=true`).
 - `collapse_vars` -- default `false`. Collapse single-use `var` and `const`
   definitions when possible.
 
+- `reduce_vars` -- default `false`. Improve optimization on variables assigned
+  with and used as constant values.
+
 - `warnings` -- display warnings when dropping unreachable code or unused
   declarations etc.
 
@@ -369,8 +382,8 @@ to set `true`; it's effectively a shortcut for `foo=true`).
   for code which relies on `Function.length`.
 
 - `keep_fnames` -- default `false`.  Pass `true` to prevent the
-  compressor from mangling/discarding function names.  Useful for code relying on
-  `Function.prototype.name`.
+  compressor from discarding function names.  Useful for code relying on
+  `Function.prototype.name`. See also: the `keep_fnames` [mangle option](#mangle).
 
 - `passes` -- default `1`. Number of times to run compress. Use an
   integer argument larger than 1 to further reduce code size in some cases.
@@ -619,9 +632,19 @@ console.log(result.code); // minified output
 console.log(result.map);
 ```
 
+To generate a source map with the fromString option, you can also use an object:
+```javascript
+var result = UglifyJS.minify({"file1.js": "var a = function () {};"}, {
+  outSourceMap: "out.js.map",
+  fromString: true
+});
+```
+
 Note that the source map is not saved in a file, it's just returned in
 `result.map`.  The value passed for `outSourceMap` is only used to set the
-`file` attribute in the source map (see [the spec][sm-spec]).
+`file` attribute in the source map (see [the spec][sm-spec]). You can set 
+option `sourceMapInline` to be `true` and source map will be appended to 
+code.
 
 You can also specify sourceRoot property to be included in source map:
 ```javascript
@@ -654,6 +677,17 @@ var result = UglifyJS.minify("compiled.js", {
 The `inSourceMap` is only used if you also request `outSourceMap` (it makes
 no sense otherwise).
 
+To set the source map url, use the `sourceMapUrl` option.
+If you're using the X-SourceMap header instead, you can just set the `sourceMapUrl` option to false.
+Defaults to outSourceMap:
+
+```javascript
+var result = UglifyJS.minify([ "file1.js" ], {
+  outSourceMap: "out.js.map",
+  sourceMapUrl: "localhost/out.js.map"
+});
+```
+
 Other options:
 
 - `warnings` (default `false`) — pass `true` to display compressor warnings.
@@ -661,7 +695,8 @@ Other options:
 - `fromString` (default `false`) — if you pass `true` then you can pass
   JavaScript source code, rather than file names.
 
-- `mangle` — pass `false` to skip mangling names.
+- `mangle` (default `true`) — pass `false` to skip mangling names, or pass
+  an object to specify mangling options (see below).
 
 - `mangleProperties` (default `false`) — pass an object to specify custom
   mangle property options.
@@ -679,6 +714,36 @@ Other options:
 ##### mangle
 
  - `except` - pass an array of identifiers that should be excluded from mangling
+
+ - `toplevel` — mangle names declared in the toplevel scope (disabled by
+  default).
+
+ - `eval` — mangle names visible in scopes where eval or with are used
+  (disabled by default).
+
+ - `keep_fnames` -- default `false`.  Pass `true` to not mangle
+  function names.  Useful for code relying on `Function.prototype.name`.
+  See also: the `keep_fnames` [compress option](#compressor-options).
+
+  Examples:
+
+  ```javascript
+  //tst.js
+  var globalVar;
+  function funcName(firstLongName, anotherLongName)
+  {
+    var myVariable = firstLongName +  anotherLongName;
+  }
+
+  UglifyJS.minify("tst.js").code;
+  // 'function funcName(a,n){}var globalVar;'
+
+  UglifyJS.minify("tst.js", { mangle: { except: ['firstLongName'] } }).code;
+  // 'function funcName(firstLongName,a){}var globalVar;'
+
+  UglifyJS.minify("tst.js", { mangle: { toplevel: true } }).code;
+  // 'function n(n,a){}var a;'
+  ```
 
 ##### mangleProperties options
 
@@ -790,8 +855,11 @@ which we care about here are `source_map` and `comments`.
 #### Keeping comments in the output
 
 In order to keep certain comments in the output you need to pass the
-`comments` option.  Pass a RegExp or a function.  If you pass a RegExp, only
-those comments whose body matches the regexp will be kept.  Note that body
+`comments` option.  Pass a RegExp (as string starting and closing with `/`
+or pass a RegExp object), a boolean or a function.  Stringified options
+`all` and `some` can be passed too, where `some` behaves like it's cli
+equivalent `--comments` without passing a value. If you pass a RegExp,
+only those comments whose body matches the RegExp will be kept.  Note that body
 means without the initial `//` or `/*`.  If you pass a function, it will be
 called for every comment in the tree and will receive two arguments: the
 node that the comment is attached to, and the comment token itself.

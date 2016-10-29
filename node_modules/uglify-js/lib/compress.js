@@ -67,18 +67,21 @@ function Compressor(options, false_by_default) {
         if_return     : !false_by_default,
         join_vars     : !false_by_default,
         collapse_vars : false,
+        reduce_vars   : false,
         cascade       : !false_by_default,
         side_effects  : !false_by_default,
         pure_getters  : false,
         pure_funcs    : null,
         negate_iife   : !false_by_default,
-        screw_ie8     : false,
+        screw_ie8     : true,
         drop_console  : false,
         angular       : false,
         warnings      : true,
         global_defs   : {},
         passes        : 1,
     }, true);
+    var sequences = this.options["sequences"];
+    this.sequences_limit = sequences == 1 ? 200 : sequences | 0;
     this.warnings_produced = {};
 };
 
@@ -190,7 +193,7 @@ merge(Compressor.prototype, {
             if ((1 / val) < 0) {
                 return make_node(AST_UnaryPrefix, orig, {
                     operator: "-",
-                    expression: make_node(AST_Number, null, { value: -val })
+                    expression: make_node(AST_Number, orig, { value: -val })
                 });
             }
 
@@ -266,7 +269,7 @@ merge(Compressor.prototype, {
             if (compressor.option("if_return")) {
                 statements = handle_if_return(statements, compressor);
             }
-            if (compressor.option("sequences")) {
+            if (compressor.sequences_limit > 0) {
                 statements = sequencesize(statements, compressor);
             }
             if (compressor.option("join_vars")) {
@@ -721,7 +724,7 @@ merge(Compressor.prototype, {
                 seq = [];
             };
             statements.forEach(function(stat){
-                if (stat instanceof AST_SimpleStatement && seqLength(seq) < 2000) {
+                if (stat instanceof AST_SimpleStatement && seqLength(seq) < compressor.sequences_limit) {
                     seq.push(stat.body);
                 } else {
                     push_seq();
@@ -808,7 +811,7 @@ merge(Compressor.prototype, {
                     CHANGED = true;
                 }
                 else if (stat instanceof AST_For
-                         && prev instanceof AST_Definitions
+                         && prev instanceof AST_Var
                          && (!stat.init || stat.init.TYPE == prev.TYPE)) {
                     CHANGED = true;
                     a.pop();
@@ -829,6 +832,13 @@ merge(Compressor.prototype, {
         };
 
         function negate_iifes(statements, compressor) {
+            function is_iife_call(node) {
+                if (node instanceof AST_Call) {
+                    return node.expression instanceof AST_Function || is_iife_call(node.expression);
+                }
+                return false;
+            }
+
             statements.forEach(function(stat){
                 if (stat instanceof AST_SimpleStatement) {
                     stat.body = (function transform(thing) {
@@ -836,7 +846,7 @@ merge(Compressor.prototype, {
                             if (node instanceof AST_New) {
                                 return node;
                             }
-                            if (node instanceof AST_Call && node.expression instanceof AST_Function) {
+                            if (is_iife_call(node)) {
                                 return make_node(AST_UnaryPrefix, node, {
                                     operator: "!",
                                     expression: node
@@ -1098,7 +1108,7 @@ merge(Compressor.prototype, {
             this._evaluating = true;
             try {
                 var d = this.definition();
-                if (d && d.constant && d.init) {
+                if (d && (d.constant || compressor.option("reduce_vars") && !d.modified) && d.init) {
                     return ev(d.init, compressor);
                 }
             } finally {
@@ -2304,6 +2314,12 @@ merge(Compressor.prototype, {
                 // typeof always returns a non-empty string, thus it's
                 // always true in booleans
                 compressor.warn("Boolean expression always true [{file}:{line},{col}]", self.start);
+                if (self.expression.has_side_effects(compressor)) {
+                    return make_node(AST_Seq, self, {
+                        car: self.expression,
+                        cdr: make_node(AST_True, self)
+                    });
+                }
                 return make_node(AST_True, self);
             }
             if (e instanceof AST_Binary && self.operator == "!") {
@@ -2490,8 +2506,8 @@ merge(Compressor.prototype, {
           case "+":
             var ll = self.left.evaluate(compressor);
             var rr = self.right.evaluate(compressor);
-            if ((ll.length > 1 && ll[0] instanceof AST_String && ll[1]) ||
-                (rr.length > 1 && rr[0] instanceof AST_String && rr[1])) {
+            if ((ll.length > 1 && ll[0] instanceof AST_String && ll[1] && !self.right.has_side_effects(compressor)) ||
+                (rr.length > 1 && rr[0] instanceof AST_String && rr[1] && !self.left.has_side_effects(compressor))) {
                 compressor.warn("+ in boolean context always true [{file}:{line},{col}]", self.start);
                 return make_node(AST_True, self);
             }
@@ -2646,16 +2662,26 @@ merge(Compressor.prototype, {
     });
 
     var ASSIGN_OPS = [ '+', '-', '/', '*', '%', '>>', '<<', '>>>', '|', '^', '&' ];
+    var ASSIGN_OPS_COMMUTATIVE = [ '*', '|', '^', '&' ];
     OPT(AST_Assign, function(self, compressor){
         self = self.lift_sequences(compressor);
-        if (self.operator == "="
-            && self.left instanceof AST_SymbolRef
-            && self.right instanceof AST_Binary
-            && self.right.left instanceof AST_SymbolRef
-            && self.right.left.name == self.left.name
-            && member(self.right.operator, ASSIGN_OPS)) {
-            self.operator = self.right.operator + "=";
-            self.right = self.right.right;
+        if (self.operator == "=" && self.left instanceof AST_SymbolRef && self.right instanceof AST_Binary) {
+            // x = expr1 OP expr2
+            if (self.right.left instanceof AST_SymbolRef
+                && self.right.left.name == self.left.name
+                && member(self.right.operator, ASSIGN_OPS)) {
+                // x = x - 2  --->  x -= 2
+                self.operator = self.right.operator + "=";
+                self.right = self.right.right;
+            }
+            else if (self.right.right instanceof AST_SymbolRef
+                && self.right.right.name == self.left.name
+                && member(self.right.operator, ASSIGN_OPS_COMMUTATIVE)
+                && !self.right.left.has_side_effects(compressor)) {
+                // x = 2 & x  --->  x &= 2
+                self.operator = self.right.operator + "=";
+                self.right = self.right.left;
+            }
         }
         return self;
     });

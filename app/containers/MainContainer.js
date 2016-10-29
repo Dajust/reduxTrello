@@ -12,31 +12,33 @@ const MainContainerPropTypes = {
 	onToggleDoneTask : PropTypes.func.isRequired,
 	onDeleteTask : PropTypes.func.isRequired,
 	onDeleteCard : PropTypes.func.isRequired,
-	onDeleteList : PropTypes.func.isRequired
-}
+	onDeleteList : PropTypes.func.isRequired,
+	moveCard 		 : PropTypes.func.isRequired,
+	swapCardIndex : PropTypes.func.isRequired
+};
 
 class MainContainer extends Component {
 	constructor () {
-		super()
+		super();
 		this.state = {
 			attributeToEdit   : "NAME_OF_ATTR_TO_BE_EDITED.EG: TITLE",
 			currentEditorValue : "",
 			curActiveList : "PATH_TO_THE_LIST_IN_FOCUS",
-			curActiveCard : "PATH_TO_THE_CARD_IN_FOCUS",
-			curTaskEditing : "PATH_TO_THE_TASK_IN_FOCUS",
+			curActiveCard : "ID_OF_CARD_IN_FOCUS",
+			curTaskEditing : "ID_OF_TASK_IN_FOCUS",
 			shouldShowCardMenu  : false,
 			shouldCloseAllEditor : true
-		}
+		};
 	}
 
 	closeAllCardMenu () {
 		this.setState({
 			shouldShowCardMenu : false
-		})
+		});
 	}
 
-	setCurActiveCard (cardPath) {
-		this.setState({curActiveCard:cardPath})
+	setCurActiveCard (cardId) {
+		this.setState({curActiveCard:cardId});
 	}
 
 	closeAllEditor ( ) {
@@ -44,16 +46,16 @@ class MainContainer extends Component {
 			shouldCloseAllEditor : true,
 			curActiveCard : "",
 			curActiveList : ""
-		})
+		});
 	}
 
-	handleShowEditor (attribute, previousVal = "", cardPath = "", taskPath = "") {
+	handleShowEditor (attribute, previousVal = "", cardId="", taskId="") {
 		this.setState({
 			attributeToEdit    : attribute,
 			currentEditorValue : previousVal,
-			curActiveCard : cardPath,
+			curActiveCard : cardId,
 			shouldCloseAllEditor : false,
-			curTaskEditing : taskPath
+			curTaskEditing : taskId
 		});
 		this.closeAllCardMenu();
 	}
@@ -67,20 +69,20 @@ class MainContainer extends Component {
 				atd = state.attributeToEdit,
 				compulsoryAttributes = ["title", "addTask", "task", "createNewCard", "createNewList"];
 
-		if (compulsoryAttributes.includes(atd) && !state.currentEditorValue.trim().length) {return}
+		if (compulsoryAttributes.includes(atd) && !state.currentEditorValue.trim().length) {return;}
 		this.closeAllEditor();
 		if (atd === "task") {
-			props.onSaveTaskEdit(state.currentEditorValue, listId, cardId, parseInt(state.curTaskEditing.split("_").pop()));
+			props.onSaveTaskEdit(state.currentEditorValue, listId, cardId, state.curTaskEditing);
 			return;
 		}
 		if (atd === "addTask") {
-			props.onSaveNewTask(state.currentEditorValue, listId, cardId);return
+			props.onSaveNewTask(state.currentEditorValue, listId, cardId);return;
 		}
 		if (atd === "createNewCard") {
-			props.onSaveNewCard(state.currentEditorValue, listId);return
+			props.onSaveNewCard(state.currentEditorValue, listId);return;
 		}
 		if (atd === "createNewList") {
-			props.onSaveNewList(state.currentEditorValue, listId);return
+			props.onSaveNewList(state.currentEditorValue, listId);return;
 		}
 
 		props.onSaveCardEdit(atd, state.currentEditorValue, listId, cardId);
@@ -100,7 +102,7 @@ class MainContainer extends Component {
 	openCardMenu (cardId) {
 		this.closeAllEditor();
 		this.setCurActiveCard(cardId);
-		this.setState({shouldShowCardMenu:true})
+		this.setState({shouldShowCardMenu:true});
 	}
 
 	handleAddACard (e, listId) {
@@ -112,7 +114,6 @@ class MainContainer extends Component {
 	handleSaveCard (e) {
 		e.stopPropagation();
 		this.setState({
-			// curActiveList : listId,
 			curActiveCard : "",
 			shouldCloseAllEditor : false
 		});
@@ -136,7 +137,6 @@ class MainContainer extends Component {
 					curTaskEditing={this.state.curTaskEditing}
 					showEditor = {this.handleShowEditor.bind(this)}
 					shouldShowCardMenu={this.state.shouldShowCardMenu}
-					setCurActiveCard={this.setCurActiveCard.bind(this)}
 					onChangeEditorValue = {this.handleChangeEditorValue.bind(this)}
 					closeAllEditor={this.closeAllEditor.bind(this)}
 					openCardMenu={this.openCardMenu.bind(this)}
@@ -147,9 +147,11 @@ class MainContainer extends Component {
 					onSaveEdit={this.handleSaveEdit.bind(this)}
 					onDeleteCard={this.props.onDeleteCard}
 					onDeleteList= {this.props.onDeleteList}
+					swapCardIndex = {this.props.swapCardIndex}
+					moveCard = {this.props.moveCard}
 				/>
 			</Main>
-		)
+		);
 	}
 }
 

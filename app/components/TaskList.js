@@ -11,11 +11,11 @@ const TaskListProptypes = {
 	activeTask   : PropTypes.string,
 	shouldShowEditor : PropTypes.bool.isRequired,
 	attributeToEdit  : PropTypes.string.isRequired,
-	curTaskEditing   : PropTypes.string,
+	curTaskEditing   : PropTypes.oneOfType([PropTypes.string, PropTypes.number ]).isRequired,
 	onToggleDoneTask    : PropTypes.func.isRequired,
 	currentEditorValue  : PropTypes.string.isRequired,
 	onChangeEditorValue : PropTypes.func.isRequired
-}
+};
 
 const TaskList = props =>(
 	<div className="check-list-container">

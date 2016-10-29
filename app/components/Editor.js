@@ -8,7 +8,7 @@ const EditorPropTypes = {
 	onChange      : PropTypes.func.isRequired,
 	onDelete : PropTypes.func,
 	onSaveEdit 		: PropTypes.func.isRequired
-}
+};
 
 class Editor extends Component {
 	componentDidMount() {
@@ -20,7 +20,7 @@ class Editor extends Component {
 		return (
 			<div className="editor">
 				<form>
-				
+
 					<div className="input-container">
 						<textarea onChange={this.props.onChange}
 											ref="textarea"
@@ -36,7 +36,7 @@ class Editor extends Component {
 					</div>
 				</form>
 			</div>
-		)
+		);
 	}
 
 }
