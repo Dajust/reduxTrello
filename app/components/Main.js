@@ -8,7 +8,7 @@ const MainPropTypes = {
 const Main = props => (
 	<div className="root-comp" onClick={props.onBodyClick}>
 		<header>
-			<h1 className="app-name">Reactrello</h1>
+			<h1 className="app-name">reacTrello</h1>
 		</header>
 		{props.children}
 	</div>

@@ -13,6 +13,8 @@ const EditorPropTypes = {
 class Editor extends Component {
 	componentDidMount() {
 		const textarea = this.refs.textarea;
+		textarea.style.height = "auto";
+    textarea.style.height = textarea.scrollHeight+"px";
 		textarea.select(); textarea.focus();
 	}
 

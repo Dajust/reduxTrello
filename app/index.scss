@@ -1,6 +1,9 @@
 // @import url(https://fonts.googleapis.com/css?family=Lobster);
 @import "./vendors/normalise";
 
+*::-moz-selection { background: #7ed0f5; color : white }
+*::selection { background: #7ed0f5; color : white }
+
 .full-cover{
 	height : 100%;
 	padding : 0;
@@ -11,7 +14,7 @@
 .action{
 	cursor : pointer;
   &:hover{
-  	background-color : #eee;
+  	background-color :  #eee;
   	border-radius : 2px;
   }
 }
@@ -30,19 +33,20 @@ html,body,#app,.root-comp{
 	@extend .full-cover;
 	color: #5a5a5a;
 	overflow: hidden;
-	background-color : #009688;
+	background-color :#1976bb// #3f51b5; //#1976bb// #009688;
 }
 header{
   flex : none;
-	background-color : #00796b;
+	background-color :#0e65a7;// #00796b;
 	text-align : center;
-	padding : 5px 0;
+	padding-top : 6px;
 }
 .app-name{
-	font-size : 30px;
-	color : #fff;
+	font-family: 'Galada', cursive;
+	font-size : 25px;
+	color : #f7f7f7;
 	margin : 0;
-	line-height : 1;
+	line-height : 1.5;
 }
 .app-board-container{
 	flex-grow : 1;
@@ -356,14 +360,14 @@ header{
 
 	  button{
 	  	border: none;
-	  	background-color: rgba(2, 167, 39, 0.98);
-		  box-shadow: 0 1px 0 #3f6f21;
+	  	background-color: #03a9f4;//rgba(2, 167, 39, 0.98);
+		  box-shadow: 0 1px 0 #026d9c;//#3f6f21;
 		  color: #fff;
 		  border-radius: 2px;
 		  width: 55px;
 		  height: 25px;
 		  &:hover{
-		  	background-color: rgba(0, 128, 29, 0.98);
+		  	background-color:#0387c1;// rgba(0, 128, 29, 0.98);
 		  }
 			&:focus{
 				outline : none;
