@@ -3,7 +3,7 @@
 
 *::-moz-selection { background: #7ed0f5; color : white }
 *::selection { background: #7ed0f5; color : white }
-
+$header-color : #f7f7f7;
 .full-cover{
 	height : 100%;
 	padding : 0;
@@ -40,11 +40,25 @@ header{
 	background-color :#0e65a7;// #00796b;
 	text-align : center;
 	padding-top : 6px;
+	position : relative;
+}
+a.source-code{
+	display: block;
+	position: absolute;
+	right: 10px;
+	bottom: 7px;
+	text-decoration: none;
+	color: #9ba5a7;
+	font-size: 14px;
+	&:hover{
+		color : $header-color;
+		text-decoration : underline;
+	}
 }
 .app-name{
 	font-family: 'Galada', cursive;
 	font-size : 25px;
-	color : #f7f7f7;
+	color : $header-color;
 	margin : 0;
 	line-height : 1.5;
 }
