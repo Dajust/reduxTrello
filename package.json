@@ -29,7 +29,9 @@
   "dependencies": {
     "react": "^15.3.0",
     "react-css-modules": "^3.7.6",
-    "react-dom": "^15.3.0"
+    "react-dom": "^15.3.0",
+    "react-redux": "^4.4.6",
+    "redux": "^3.6.0"
   },
   "scripts": {
     "production": "webpack -p",
