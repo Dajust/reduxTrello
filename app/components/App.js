@@ -23,7 +23,7 @@ const AppPropTypes = {
 	onClickAddAList : PropTypes.func.isRequired,
 	onClickSaveList : PropTypes.func.isRequired,
 	itemToEdit : PropTypes.oneOfType([PropTypes.string, PropTypes.number ]).isRequired,
-	attributeToEdit : PropTypes.string.isRequired,
+	attributeToEdit : PropTypes.string.isRequired
 };
 
 const App = (props) => (

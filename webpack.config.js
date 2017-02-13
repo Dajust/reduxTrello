@@ -6,7 +6,7 @@ var
 		inject: "body"
 	}),
 	DashboardPlugin = require("webpack-dashboard/plugin"),
-	// webpack = require("webpack"),
+	webpack = require("webpack"),
 	ExtractTextPlugin = require("extract-text-webpack-plugin");
 
 module.exports = {
@@ -20,8 +20,8 @@ module.exports = {
 	plugins : [
 		new DashboardPlugin(),
 		HTMLWebpackPluginConfig,
-		new ExtractTextPlugin("styles.css",{allChunks : true})
-		// new webpack.DefinePlugin({ "process.env": { "NODE_ENV": JSON.stringify("production") } })
+		new ExtractTextPlugin("styles.css",{allChunks : true}),
+		new webpack.DefinePlugin({ "process.env": { "NODE_ENV": JSON.stringify("production") } })
 	],
 
 	module : {
