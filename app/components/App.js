@@ -29,7 +29,7 @@ const AppPropTypes = {
 const App = (props) => (
 	<div className="root-comp" onClick={props.onBodyClick}>
 		<header>
-			<a href="https://github.com/Dajust/reacTrello" target="blank" className="source-code">Browse the code</a>
+			<a href="https://github.com/Dajust/reduxTrello" target="blank" className="source-code">Browse the code</a>
 			<h1 className="app-name">reduxTrello</h1>
 		</header>
 		<Board>
