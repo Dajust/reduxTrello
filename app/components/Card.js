@@ -6,25 +6,23 @@ import {findDOMNode} from "react-dom";
 import TaskList from "./TaskList";
 import CardMenu from "./CardMenu";
 import Editor from "./Editor";
+import Task from "./Task";
 import {DragSource, DropTarget} from "react-dnd";
 import Types from "../staticTypes";
 
 let initialState; // initialState before beginDrag DnD
 
 const dragSourceSpec = {
-	beginDrag (props) {
-		return {
-			id : props.id,
-			index : props.index,
-			parentIndex : props.listIndex,
-			setInitialState : props.setState,
-			curState : props.curState
-		};
-	},
+	beginDrag : ({id, index, parentListId, curState}) => ({
+		id,
+		index,
+		parentListId,
+		curState
+	}),
 
-	isDragging(props, monitor) {
-		return monitor.getItem().id === props.id;
- },
+	isDragging : (props, monitor) =>
+		monitor.getItem().id === props.id
+ ,
 
 	// endDrag (props) {
 	// 	// if (!monitor.didDrop()) {props.replacePlaceholderWithCurDraggingCard(props.curState); return;}
@@ -44,13 +42,13 @@ dragSourceCollect = function dragSourceCollect (connect, monitor) {
 const cardDropTargetSpec = {
   hover(props, monitor, component) {
     const item   = monitor.getItem(),
-					id     = props.id,
+					hoverId = props.id,
 					dragId = item.id,
 					dragIndex = item.index,
 					hoverIndex = props.index;
 
     // Don't replace items with themselves
-    if (dragId === id) {
+    if (dragId === hoverId) {
       return;
     }
 
@@ -81,7 +79,7 @@ const cardDropTargetSpec = {
     }
 
     // Time to actually perform the action
-    props.swapCardIndex(props.listIndex, dragIndex, hoverIndex);
+    props.handleOnSortCard(hoverId, hoverIndex, dragId, dragIndex);
 
     // Note: we're mutating the monitor item here!
     // Generally it's better to avoid mutations,
@@ -96,96 +94,66 @@ const cardDropTargetCollect = (connect, monitor) => ({
 	connectDropTarget : connect.dropTarget()
 });
 
-const CardPropTypes = {
-	tasks             : PropTypes.array,
-	shouldShowDetails : PropTypes.bool.isRequired,
-	shouldShowEditor  : PropTypes.bool.isRequired,
-	shouldShowMenu 	  : PropTypes.bool.isRequired,
-	attributeToEdit   : PropTypes.string.isRequired,
-	onToggleShowMenu  : PropTypes.func.isRequired,
-	curTaskEditing    : PropTypes.oneOfType([PropTypes.string, PropTypes.number ]).isRequired,
-	onDeleteTask      : PropTypes.func.isRequired,
-	onEditTitle 			: PropTypes.func.isRequired,
-	onEditTask  			: PropTypes.func.isRequired,
-	onSaveEdit 				: PropTypes.func.isRequired,
-	index             : PropTypes.number.isRequired,
-	listIndex         : PropTypes.number.isRequired,
-	id 								: PropTypes.oneOfType([PropTypes.string, PropTypes.number ]).isRequired,
-	menuPosition      : PropTypes.object.isRequired,
-	title             : PropTypes.string.isRequired,
-	listId            : PropTypes.number,
-	description       : PropTypes.string,
-	onAddATask 				: PropTypes.func.isRequired,
-	onEditDescription : PropTypes.func,
-	onToggleDoneTask    : PropTypes.func.isRequired,
-	onToggleShowDetails : PropTypes.func.isRequired,
-	currentEditorValue  : PropTypes.string.isRequired,
-	onChangeEditorValue : PropTypes.func.isRequired,
-	onDeleteCard      : PropTypes.func.isRequired,
-	curState : PropTypes.object.isRequired,// we want to preserve card state while/after DnD
-	isDragging : PropTypes.bool,
-	connectDragSource : PropTypes.func.isRequired,
-	setState : PropTypes.func.isRequired,
-	connectDropTarget : PropTypes.func.isRequired,
-	dragItem : PropTypes.object,
-	isOver :  PropTypes.bool.isRequired,
-	swapCardIndex : PropTypes.func.isRequired
-};
 
 class Card extends Component{
 	componentDidMount() {
 		if (initialState !== undefined) {
-			this.props.setState(initialState);
+			this.props.onSetState(initialState);
 			initialState = undefined;
 		}
 	}
 
 	render () {
-		const {isDragging, dragItem} = this.props;
+		const {
+			card, onClickDeleteCard, onShowDetails,connectDragSource,
+			connectDropTarget, showEditor, isSelectedCard,
+			attributeToEdit, updateCard, itemToEdit,isDragging,dragItem
+		} = this.props,
+		isItemToEdit = itemToEdit === card.id,
+		onClickSave = (value)	=>{updateCard(attributeToEdit, value);};
 
+		// const { dragItem} = this.props;
+		//
 		if (isDragging) {
 			initialState = dragItem.curState;
 		}
-		return this.props.connectDragSource(
-			this.props.connectDropTarget(
+		return connectDragSource(
+			connectDropTarget(
 				<div className="card ">
 					<div className="menu-icon action" >
 						<i className="fa fa-ellipsis-v"
 								aria-hidden="true"
 								onClick={(e) => {
-										this.props.onToggleShowMenu(e.target);
+										this.props.onClickMenu(e.target);
 										e.stopPropagation();
 									}
 								}>
 						</i>
 					</div>
 					{
-						this.props.shouldShowMenu &&
+						this.props.shouldShowCardMenu &&
 						<CardMenu
-							cardId = {this.props.id}
-							listId = {this.props.listId}
-							hasDescription  = {!!this.props.description.length}
-							onAddATask      = {this.props.onAddATask}
-							onEditTitle     = {this.props.onEditTitle}
+							hasDescription    = {!!card.description.length}
+							onClickAddATask   = {(e)=>{onShowDetails(); showEditor("new task"); e.stopPropagation();}}
+							onClickEditTitle  = {(e)=>{onShowDetails(); showEditor("title"); e.stopPropagation(); }}
 							menuPosition    = {this.props.menuPosition}
-							onDeleteTask    = {this.props.onDeleteTask}
-							onDeleteCard    = {this.props.onDeleteCard}
-							onEditDescription = {this.props.onEditDescription}
+							onClickDeleteCard  = {onClickDeleteCard}
+							onClickEditDescription = {(e)=>{onShowDetails(); showEditor( "description"); e.stopPropagation(); }}
 						/>
 					}
 					<div className="card-title-container">
 						{
-							this.props.shouldShowEditor &&  this.props.attributeToEdit === "title" ?
+
+							isItemToEdit &&  attributeToEdit === "title" ?
 							<Editor
 								textareaClass = {"edit-checklist"}
-								onChange      = {this.props.onChangeEditorValue}
-								value         = {this.props.currentEditorValue}
-								onSaveEdit    = {this.props.onSaveEdit}
+								initialValue   = {card.title}
+								onClickSave   = {onClickSave}
 							/> :
 
 							<div className="card-title action" onClick={this.props.onToggleShowDetails}>
 								<i className={this.props.shouldShowDetails?"fa fa-caret-down":"fa fa-caret-right"} aria-hidden="true"></i>
-								<span className="title">{this.props.title}</span>
+								<span className="title">{card.title}</span>
 							</div>
 						}
 					</div>
@@ -194,46 +162,41 @@ class Card extends Component{
 						<div className="card-details">
 							<div className="description">
 								{
-									this.props.shouldShowEditor && this.props.attributeToEdit === "description" ?
+									isItemToEdit && attributeToEdit === "description" ?
 									<Editor
 										textareaClass = {"edit-checklist"}
 										placeholder   = "Add a description..."
-										onChange      = {this.props.onChangeEditorValue}
-										value         = {this.props.currentEditorValue}
-										onSaveEdit    = {this.props.onSaveEdit}
+										initialValue   = {card.description}
+										onClickSave   = {onClickSave}
 									/> :
-									this.props.description === undefined || this.props.description === "" ?
-									<div onClick={this.props.onEditDescription} className="add-description-prompt action">Add a description...</div> :
-									<div onClick={this.props.onEditDescription} className="card-description action">{this.props.description}</div>
+
+								<div onClick={(e)=>{showEditor("description"); e.stopPropagation();}}
+										className={`action  ${card.description ? "card-description" : "add-description-prompt"}`}>
+										{card.description ? card.description : "Add a description..."}
+									</div>
 								}
 							</div>
-							<TaskList
-								cardId = {this.props.id}
-								tasks  = {this.props.tasks}
-								listId = {this.props.listId}
-								onEditTask = {this.props.onEditTask}
-								onSaveEdit = {this.props.onSaveEdit}
-								onDeleteTask    = {this.props.onDeleteTask}
-								curTaskEditing  = {this.props.curTaskEditing}
-								attributeToEdit = {this.props.attributeToEdit}
-								onToggleDoneTask 		= {this.props.onToggleDoneTask}
-								shouldShowEditor    = {this.props.shouldShowEditor}
-								currentEditorValue  = {this.props.currentEditorValue}
-								onChangeEditorValue = {this.props.onChangeEditorValue}
-							/>
-
-						<div className={`add-task-wrapper ${this.props.shouldShowEditor &&  this.props.attributeToEdit === "addTask" ? "active" : ""}`}>
+							<TaskList>
 								{
-									this.props.shouldShowEditor &&  this.props.attributeToEdit === "addTask" ?
+									card.tasks.map((taskId, i) =>
+										<Task
+											id = {taskId}
+											key = {taskId}
+											index = {i}
+											cardId = {card.id}
+										/>)
+								}
+							</TaskList>
+
+						<div className={`add-task-wrapper ${isSelectedCard &&  attributeToEdit === "addTask" ? "active" : ""}`}>
+								{
+									isItemToEdit && attributeToEdit === "new task" ?
 									<Editor
 										textareaClass = {"edit-checklist"}
-										onChange      = {this.props.onChangeEditorValue}
 										placeholder   = "Add a task..."
-										value         = {this.props.currentEditorValue}
-										onSaveEdit    = {this.props.onSaveEdit}
+										onClickSave   = {(taskName)=>{this.props.onAddATask(card.id, taskName);}}
 									/> :
-
-									<div onClick={this.props.onAddATask}>Add a task...</div>
+									<div onClick={(e)=>{showEditor( "new task"); e.stopPropagation();}}>Add a task...</div>
 								}
 							</div>
 
@@ -246,10 +209,41 @@ class Card extends Component{
 	}
 }
 
-Card.propTypes = CardPropTypes;
+Card.propTypes = {
+	card  : PropTypes.shape({
+		id    : PropTypes.oneOfType([PropTypes.string, PropTypes.number ]).isRequired,
+		title : PropTypes.string.isRequired,
+		tasks : PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.string, PropTypes.number ])).isRequired,
+		description : PropTypes.string.isRequired
+	}).isRequired,
+	index : PropTypes.number.isRequired,
+	parentListId : PropTypes.oneOfType([PropTypes.string, PropTypes.number ]).isRequired,
+	shouldShowDetails : PropTypes.bool.isRequired,
+	shouldShowCardMenu : PropTypes.bool.isRequired,
+	currentEditorValue : PropTypes.string,
+	itemToEdit : PropTypes.oneOfType([PropTypes.string, PropTypes.number ]).isRequired,
+	attributeToEdit : PropTypes.string.isRequired,
+	isSelectedCard  : PropTypes.bool.isRequired,
+	onClickMenu 		: PropTypes.func.isRequired,
+	curTaskEditing  : PropTypes.oneOfType([PropTypes.string, PropTypes.number ])/*.isRequired*/,
+	showEditor 	: PropTypes.func.isRequired,
+	onShowDetails : PropTypes.func.isRequired,
+	updateCard 	: PropTypes.func.isRequired,
+	menuPosition      : PropTypes.object.isRequired,
+	onAddATask 				: PropTypes.func.isRequired,
+	onToggleShowDetails : PropTypes.func.isRequired,
+	onClickDeleteCard      : PropTypes.func.isRequired,
+	curState : PropTypes.object.isRequired,// we want to preserve card state while/after Dn*/,
+	isDragging : PropTypes.bool,
+	connectDragSource : PropTypes.func.isRequired,
+	onSetState : PropTypes.func.isRequired,
+	connectDropTarget : PropTypes.func.isRequired,
+	dragItem : PropTypes.object,
+	isOver :  PropTypes.bool.isRequired,
+	handleOnSortCard : PropTypes.func.isRequired
+};
 
 const dropableCard = DropTarget(Types.CARD, cardDropTargetSpec, cardDropTargetCollect)(Card);
-
 const draggableCard = DragSource(Types.CARD, dragSourceSpec, dragSourceCollect)(dropableCard);
 
 export default draggableCard;
