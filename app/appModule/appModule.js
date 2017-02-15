@@ -21,7 +21,7 @@ export default {
 			"0" : {
 				id: "0",
 				title: "Click to play with me",
-				description: "Yay! you clicked, THANK YOU! I will introduce you to the features of this app.Below is a list of taskes you will complete.",
+				description: "THANK YOU! I will introduce you to the features of this app.Below is a list of taskes you will complete.",
 				tasks : ["0", "1", "2", "3"]
 			},
 			"1" : {
@@ -39,7 +39,7 @@ export default {
 			"3" : {
 				id: "3",
 				title: "Please help me!",
-				description: "You are currently playing me, but I'm not sure what featues you have used so far, please kindly let me know by adding some taks you've completed on this card. Also try adding some more cards on this list.",
+				description: "You are currently playing me, but I'm not sure what features you've used so far, please kindly let me know by adding some tasks you've completed on this card. Also, try adding some more cards on this list.",
 				tasks : []
 			},
 			"4" : {
@@ -74,7 +74,7 @@ export default {
 			},
 			"4" : {
 				id: "4",
-				name: "I'm living in a card with no description please help add a description. And maybe, more taks because I'm lonely here.",
+				name: "I'm living in a card with no description please help add a description. And maybe, more tasks because I'm lonely here.",
 				done: false
 			},
 			"5" : {
